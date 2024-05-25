@@ -180,9 +180,9 @@ echo -e "${Red}- add product's overlay vietnamese"
 sudo unzip -o -q "$GITHUB_WORKSPACE"/"${device}"_files/overlay.zip -d "$GITHUB_WORKSPACE"/images/product/overlay
 #
 # 修复精准电量 (亮屏可用时长)
-#echo -e "${Red}- 修复精准电量 (亮屏可用时长)"
+echo -e "${Red}- 修复精准电量 (亮屏可用时长)"
 #sudo rm -rf "$GITHUB_WORKSPACE"/images/system/system/app/PowerKeeper/*
-#sudo unzip -o -q "$GITHUB_WORKSPACE"/"${device}"_files/PowerKeeper.zip -d "$GITHUB_WORKSPACE"/images/system/system/app/PowerKeeper/
+sudo unzip -o -q "$GITHUB_WORKSPACE"/"${device}"_files/PowerKeeper.zip -d "$GITHUB_WORKSPACE"/images/system/system/app/PowerKeeper/
 
 # 修复注视感知
 #echo -e "${Red}- 修复注视感知"
