@@ -1,0 +1,44 @@
+﻿name: Build ROM for Peridot
+on:
+  workflow_dispatch:
+    inputs:
+      URL:
+        description: "Official zip Rom package download address"
+        required: true
+        default: 'https://bn.d.miui.com/OS1.0.13.0.UNPCNXM/miui_PERIDOT_OS1.0.13.0.UNPCNXM_713afcfba9_14.0.zip'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Maximize your build environment
+        uses: easimon/maximize-build-space@master
+        with:
+          swap-size-mb: 8192
+          root-reserve-mb: 4096
+          temp-reserve-mb: 4096
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+      - name: Check out warehouse files
+        uses: actions/checkout@main
+      - name:  Construct Rom
+        run: |
+          sudo bash "$GITHUB_WORKSPACE"/make.sh ${{ github.event.inputs.URL }} $GITHUB_ENV $GITHUB_WORKSPACE
+      - name: 处理 ROM
+        run: |
+          User="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          url2="$(curl -s https://api.gofile.io/getServer | jq -r .data.server)"
+          [ -z "$url2" ] && url2="store$(( $RANDOM % 8 + 1 ))"
+          Linkrom="$(curl --dns-servers '1.1.1.1' -L -N -H $User -F file=@$GITHUB_WORKSPACE/zip/"${{ env.rom_name }}" https://${url2}.gofile.io/uploadFile | jq -r .data.downloadPage)"
+          touch file.log
+          echo -e "版本: ${{ env.os_version }}\n安全补丁版本: ${{ env.security_patch }}\n基线版本: ${{ env.base_line }}\nLink rom: $Linkrom" | tee file.log
+      - name: 上传到 Github Release
+        uses: ncipollo/release-action@main
+        with:
+          name: ${{ env.os_version }}
+          tag: ${{ env.os_version }}
+          bodyFile: "${{ github.workspace }}/file.log"
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+
