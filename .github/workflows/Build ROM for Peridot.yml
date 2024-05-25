@@ -26,13 +26,13 @@ jobs:
         run: |
           sudo bash "$GITHUB_WORKSPACE"/make.sh ${{ github.event.inputs.URL }} $GITHUB_ENV $GITHUB_WORKSPACE
       - name: 处理 ROM
-         run: |
-          mkdir -p "$GITHUB_WORKSPACE"/GithubRelease
-          cd "$GITHUB_WORKSPACE"/GithubRelease
-          sudo split -b 1536M -d "$GITHUB_WORKSPACE"/zip/${{ env.rom_name }} ${{ env.rom_name }}
-          cd "$GITHUB_WORKSPACE"
-          touch file.log
-          echo -e "版本: ${{ env.os_version }}\n安全补丁版本: ${{ env.security_patch }}\n基线版本: ${{ env.base_line }}" > file.log
+        # run: |
+        #  mkdir -p "$GITHUB_WORKSPACE"/GithubRelease
+        #  cd "$GITHUB_WORKSPACE"/GithubRelease
+        # sudo split -b 1536M -d "$GITHUB_WORKSPACE"/zip/${{ env.rom_name }} ${{ env.rom_name }}
+        # cd "$GITHUB_WORKSPACE"
+        # touch file.log
+        # echo -e "版本: ${{ env.os_version }}\n安全补丁版本: ${{ env.security_patch }}\n基线版本: ${{ env.base_line }}" > file.log
       
         run: |
           User="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
