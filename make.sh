@@ -159,7 +159,7 @@ mv -f "$GITHUB_WORKSPACE"/init_boot/kernelsu_boot*.img "$GITHUB_WORKSPACE"/"${de
 rm -rf "$GITHUB_WORKSPACE"/init_boot
 
 # Replace Replace system framework.jar
-echo -e "${Red}- Replace system services.jar"
+echo -e "${Red}- Replace system framework.jar"
 sudo unzip -o -q "$GITHUB_WORKSPACE"/"${device}"_files/framework.zip -d "$GITHUB_WORKSPACE"/images/system/framework
 
 # Replace Replace system services.jar
