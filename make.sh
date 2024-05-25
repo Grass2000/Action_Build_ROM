@@ -4,10 +4,10 @@ URL="$1"              # 移植包下载地址
 GITHUB_ENV="$2"       # 输出环境变量
 GITHUB_WORKSPACE="$3" # 工作目录
 
-device=fuxi # 设备代号
+device=peridot # 设备代号
 
-zip_name=$(echo ${URL} | cut -d"/" -f5)        #包名，例：miui_FUXI_OS1.0.24.3.18.DEV_e208767273_14.0.zip
-os_version=$(echo ${URL} | cut -d"/" -f4)      #版本号，例：OS1.0.24.3.18.DEV  
+zip_name=$(echo ${URL} | cut -d"/" -f5)        #包名，例：miui_PERIDOT_OS1.0.13.0.UNPCNXM_713afcfba9_14.0.zip
+os_version=$(echo ${URL} | cut -d"/" -f4)      #版本号，例：OS1.0.13.0.UNPCNXM  
 android_version=$(echo ${URL} | cut -d"_" -f5 | cut -d"." -f1) # Android 版本号, 例: 14
 build_time=$(date) && build_utc=$(date -d "$build_time" +%s)   # 构建时间
 
@@ -158,6 +158,38 @@ $ksud boot-patch -b "$GITHUB_WORKSPACE"/init_boot/init_boot.img --magiskboot $ma
 mv -f "$GITHUB_WORKSPACE"/init_boot/kernelsu_boot*.img "$GITHUB_WORKSPACE"/"${device}"/firmware-update/init_boot-kernelsu.img
 rm -rf "$GITHUB_WORKSPACE"/init_boot
 
+# Replace Replace system framework.jar
+echo -e "${Red}- Replace system services.jar"
+sudo unzip -o -q "$GITHUB_WORKSPACE"/"${device}"_files/framework.zip -d "$GITHUB_WORKSPACE"/images/system/framework
+
+# Replace Replace system services.jar
+echo -e "${Red}- Replace system services.jar"
+sudo unzip -o -q "$GITHUB_WORKSPACE"/"${device}"_files/services.zip -d "$GITHUB_WORKSPACE"/images/system/framework
+
+# Replace Replace system_ext miui-services.jar
+echo -e "${Red}- Replace system_ext miui-services.jar"
+sudo cp -f "$GITHUB_WORKSPACE"/"${device}"_files/miui-services.jar "$GITHUB_WORKSPACE"/images/system/system_ext/framework
+
+# Replace vendor fstab
+# echo -e "${Red}- Replace vendor fstab"
+# sudo cp -f "$GITHUB_WORKSPACE"/"${device}"_files/fstab.qcom "$GITHUB_WORKSPACE"/"${device}"/vendor/etc/fstab.qcom
+
+# add product's overlay vietnamese
+echo -e "${Red}- add product's overlay vietnamese"
+#sudo rm -rf "$GITHUB_WORKSPACE"/images/product/overlay/*
+sudo unzip -o -q "$GITHUB_WORKSPACE"/"${device}"_files/overlay.zip -d "$GITHUB_WORKSPACE"/images/product/overlay
+#
+# 修复精准电量 (亮屏可用时长)
+#echo -e "${Red}- 修复精准电量 (亮屏可用时长)"
+#sudo rm -rf "$GITHUB_WORKSPACE"/images/system/system/app/PowerKeeper/*
+#sudo unzip -o -q "$GITHUB_WORKSPACE"/"${device}"_files/PowerKeeper.zip -d "$GITHUB_WORKSPACE"/images/system/system/app/PowerKeeper/
+
+# 修复注视感知
+#echo -e "${Red}- 修复注视感知"
+#sudo rm -rf "$GITHUB_WORKSPACE"/images/product/app/MiAONService*
+#mkdir "$GITHUB_WORKSPACE"/images/product/app/MiAONService
+#sudo cp "$GITHUB_WORKSPACE"/"${device}"_files/MiAONService.apk "$GITHUB_WORKSPACE"/images/product/app/MiAONService
+
 # 统一 build.prop
 echo -e "${Red}- 统一 build.prop"
 sudo sed -i 's/ro.build.user=[^*]*/ro.build.user=grass2/' "$GITHUB_WORKSPACE"/images/system/system/build.prop
@@ -172,9 +204,10 @@ for vendor_build_prop in $(sudo find "$GITHUB_WORKSPACE"/"${device}"/ -type f -n
   sudo sed -i 's/ro.mi.os.version.incremental=[^*]*/ro.mi.os.version.incremental='"$os_version"'/' "$vendor_build_prop"
 done
 
+
 # 精简部分应用
 echo -e "${Red}- 精简部分应用"
-apps=("MIGalleryLockscreen" "MIUIDriveMode" "MIUIDuokanReader" "MIUIGameCenter" "MIUINewHomeMIUI15" "MIUINewHome" "MIUIYoupin" "MIUIHuanJi" "MIUIMiDrive" "MIUIVirtualSim" "ThirdAppAssistant" "XMRemoteController" "MIUIVipAccount" "MiuiScanner" "Xinre" "SmartHome" "MiShop" "MiRadio" "MIUICompass" "MediaEditor" "BaiduIME" "iflytek.inputmethod" "MIService" "MIUIEmail" "MIUIVideo" "MIUIMusicT")
+apps=("MIGalleryLockscreen" "MIUIDriveMode" "MIUIDuokanReader" "MIUIGameCenter" "MIUINewHomeMIUI15" "MIUINewHome" "MIUIYoupin" "MIUIHuanJi" "MIUIMiDrive" "MIUIVirtualSim" "ThirdAppAssistant" "XMRemoteController" "MIUIVipAccount" "MiuiScanner" "Xinre" "SmartHome" "MiShop" "MiRadio" "MediaEditor" "BaiduIME" "iflytek.inputmethod" "MIService" "MIUIEmail" "MIUIVideo" "MIUIMusicT")
 for app in "${apps[@]}"; do
   appsui=$(sudo find "$GITHUB_WORKSPACE"/images/product/data-app/ -type d -iname "*${app}*")
   if [[ -n $appsui ]]; then
@@ -182,6 +215,14 @@ for app in "${apps[@]}"; do
     sudo rm -rf "$appsui"
   fi
 done
+
+# 分辨率修改
+echo -e "${Red}- 分辨率修改"
+sudo sed -i 's/persist.miui.density_v2=[^*]*/persist.miui.density_v2=480/' "$GITHUB_WORKSPACE"/images/product/etc/build.prop
+# Add aptX Lossless
+echo -e "${Red}- Add aptX Lossless"
+sudo sed -i '/# end of file/i persist.vendor.qcom.bluetooth.aptxadaptiver2_2_support=true' "$GITHUB_WORKSPACE"/"${device}"/vendor/build.prop
+
 
 # 占位广告应用
 echo -e "${Red}- 占位广告应用"
@@ -263,7 +304,7 @@ End_Time 功能修复
 ### 功能修复结束
 
 ### 生成 super.img
-echo -e "${Red}- 开始打包super.img"
+echo -e "${Red}- Start Packaging super.img"
 Start_Time
 partitions=("mi_ext" "odm" "product" "system" "system_ext" "system_dlkm" "vendor" "vendor_dlkm")
 for partition in "${partitions[@]}"; do
@@ -290,17 +331,17 @@ sudo find "$GITHUB_WORKSPACE"/images/ -exec touch -t 200901010000.00 {} \;
 zstd -12 -f "$GITHUB_WORKSPACE"/images/super.img -o "$GITHUB_WORKSPACE"/images/super.zst --rm
 End_Time 压缩super.zst
 # 生成卡刷包
-echo -e "${Red}- 生成卡刷包"
+echo -e "${Red}-Generate card flash package"
 Start_Time
 sudo $a7z a "$GITHUB_WORKSPACE"/zip/miui_${device}_${os_version}.zip "$GITHUB_WORKSPACE"/images/* >/dev/null
 sudo rm -rf "$GITHUB_WORKSPACE"/images
 End_Time 压缩卡刷包
-# 定制 ROM 包名
-echo -e "${Red}- 定制 ROM 包名"
+# Custom ROM package name
+echo -e "${Red}- Custom ROM package name"
 md5=$(md5sum "$GITHUB_WORKSPACE"/zip/miui_${device}_${os_version}.zip)
 echo "MD5=${md5:0:32}" >>$GITHUB_ENV
 zip_md5=${md5:0:10}
-rom_name="miui_FUXI_${os_version}_${zip_md5}_${android_version}.0_grass2.zip"
+rom_name="miui_peridot_${os_version}_${zip_md5}_${android_version}.0_grass2.zip"
 sudo mv "$GITHUB_WORKSPACE"/zip/miui_${device}_${os_version}.zip "$GITHUB_WORKSPACE"/zip/"${rom_name}"
 echo "rom_name=$rom_name" >>$GITHUB_ENV
 ### 输出卡刷包结束
